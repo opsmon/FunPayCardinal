@@ -307,7 +307,7 @@ class Cardinal(object):
         # Время следующего вызова функции (по умолчанию - бесконечность).
         next_call = float("inf")
 
-        for subcat in sorted(list(self.profile.get_sorted_lots(2).keys()), key=lambda x: x.category.position):
+        for subcat in sorted(list(self.curr_profile.get_sorted_lots(2).keys()), key=lambda x: x.category.position):
             if subcat.type is SubCategoryTypes.CURRENCY:
                 continue
             # Если id категории текущей подкатегории уже находится в self.game_ids, но время поднятия подкатегорий
@@ -546,7 +546,7 @@ class Cardinal(object):
 
                 return result
             except:
-                logger.warning("Не удалось получить курс обмена. Осталось попыток: {i}")
+                logger.warning(f"Не удалось получить курс обмена. Осталось попыток: {i}")
                 logger.debug("TRACEBACK", exc_info=True)
                 time.sleep(1)
 
@@ -877,7 +877,6 @@ class Cardinal(object):
                     pass
                 logger.error(text)
                 logger.debug("TRACEBACK", exc_info=True)
-                continue
 
     def add_telegram_commands(self, uuid: str, commands: list[tuple[str, str, bool]]):
         """
