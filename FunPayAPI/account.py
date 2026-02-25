@@ -169,19 +169,6 @@ class Account:
         :return: объект ответа.
         :rtype: :class:`requests.Response`
         """
-
-        def normalize_url(api_method: str, locale: Literal["ru", "en", "uk"] | None = None) -> str:
-            api_method = "https://funpay.com/" if api_method == "https://funpay.com" else api_method
-            url = api_method if api_method.startswith("https://funpay.com/") else "https://funpay.com/" + api_method
-            locales = ("en", "uk")
-            for loc in locales:
-                url = url.replace(f"https://funpay.com/{loc}/", "https://funpay.com/", 1)
-            if not locale:
-                locale = self.locale
-            if locale in locales:
-                return url.replace(f"https://funpay.com/", f"https://funpay.com/{locale}/", 1)
-            return url
-
         def update_locale(redirect_url: str):
             for locale in ("en", "uk"):
                 if redirect_url.startswith(f"https://funpay.com/{locale}/"):
@@ -190,21 +177,32 @@ class Account:
             if redirect_url.startswith(f"https://funpay.com"):
                 self.__locale = "ru"
 
-        headers["cookie"] = f"golden_key={self.golden_key}; cookie_prefs=1"
-        headers["cookie"] += f"; PHPSESSID={self.phpsessid}" if self.phpsessid and not exclude_phpsessid else ""
-        if self.user_agent:
-            headers["user-agent"] = self.user_agent
-        if request_method == "post" and locale:
-            link = normalize_url(api_method, locale)
+
+        if self.is_funpay_api_method(api_method):
+            cookies = {"golden_key": self.golden_key}
+            link = self.normalize_url(api_method, locale)
         else:
-            link = normalize_url(api_method)
-        locale = locale or self.__set_locale
-        if request_method == "get" and locale and locale != self.locale:
-            link += f'{"&" if "?" in link else "?"}setlocale={locale}'
+            cookies = {"golden_key": self.golden_key,
+                       "cookie_prefs": "1"}
+            if self.phpsessid and not exclude_phpsessid:
+                cookies["PHPSESSID"] = self.phpsessid
+
+            if self.user_agent:
+                headers["user-agent"] = self.user_agent
+
+            if request_method == "post" and locale:
+                link = self.normalize_url(api_method, locale)
+            else:
+                link = self.normalize_url(api_method)
+            locale = locale or self.__set_locale
+            if request_method == "get" and locale and locale != self.locale:
+                link += f'{"&" if "?" in link else "?"}setlocale={locale}'
+
         kwargs = {"method": request_method,
                   "headers": headers,
                   "timeout": self.requests_timeout,
-                  "proxies": self.proxy or {}}
+                  "proxies": self.proxy or {},
+                  "cookies": cookies}
         i = 0
         response = None
         while i < 10 or response.status_code == 429:
