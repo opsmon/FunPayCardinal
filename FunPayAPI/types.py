@@ -635,7 +635,7 @@ class Order:
             v = self.get_field_value_any(key)
             if not v:
                 continue
-            s = f"{v} {field.name}" if v.isdigit() else v
+            s = f"{v} {field.name}" if (isinstance(v, int) or str(v).isdigit()) else v
             result = f'{result}, {s}' if result else s
         return result
 
