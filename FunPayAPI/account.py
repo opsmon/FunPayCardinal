@@ -180,6 +180,8 @@ class Account:
 
         if self.is_funpay_api_method(api_method):
             cookies = {"golden_key": self.golden_key}
+            if self.phpsessid:
+                cookies["PHPSESSID"] = self.phpsessid
             link = self.normalize_url(api_method, locale)
         else:
             cookies = {"golden_key": self.golden_key,
