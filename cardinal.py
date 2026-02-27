@@ -30,6 +30,7 @@ from locales.localizer import Localizer
 from FunPayAPI import utils as fp_utils
 from Utils import cardinal_tools
 import tg_bot.bot
+from telebot.apihelper import ApiTelegramException
 
 from threading import Thread
 
@@ -656,7 +657,25 @@ class Cardinal(object):
         self.run_handlers(self.pre_init_handlers, (self,))
 
         if self.MAIN_CFG["Telegram"].getboolean("enabled"):
-            self.telegram.setup_commands()
+            tg_ready = True
+            try:
+                self.telegram.setup_commands()
+            except ApiTelegramException as e:
+                if e.result.status_code == 401:
+                    logger.error("Невозможно подключиться к Telegram API: неверный токен (401 Unauthorized).")
+                    logger.error("Проверьте значение token в секции [Telegram] файла configs/main.cfg.")
+                    tg_ready = False
+                else:
+                    logger.warning("Произошла ошибка при установке команд Telegram.")
+                    logger.debug("TRACEBACK", exc_info=True)
+            except:
+                logger.warning("Произошла ошибка при установке команд Telegram.")
+                logger.debug("TRACEBACK", exc_info=True)
+
+            if not tg_ready:
+                self.MAIN_CFG["Telegram"]["enabled"] = "0"
+
+        if self.MAIN_CFG["Telegram"].getboolean("enabled"):
             try:
                 self.telegram.edit_bot()
             except AttributeError:  # todo убрать когда-то
