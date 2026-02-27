@@ -1,0 +1,16 @@
+services:
+  funpaycardinal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: funpaycardinal
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    environment:
+      TZ: Europe/Moscow
+    volumes:
+      - ./configs:/app/configs
+      - ./logs:/app/logs
+      - ./storage:/app/storage
+      - ./plugins:/app/plugins
